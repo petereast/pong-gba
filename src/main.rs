@@ -18,7 +18,7 @@ use agb::display::GraphicsFrame;
 use agb::display::object::Object;
 use agb::include_aseprite;
 use agb::input::Button;
-use agb::fixnum::{Vector2D, vec2};
+use agb::fixnum::{vec2, Rect, Vector2D};
 
 include_aseprite!(
     mod sprites,
@@ -59,6 +59,10 @@ impl Paddle {
             .set_hflip(self.hflip)
             .show(frame)
     }
+
+    fn collision_rect(&self) -> Rect<i32> {
+        Rect::new(self.pos, vec2(14, 16 * 3))
+    }
 }
 
 // The main function must take 1 arguments and never return. The agb::entry decorator
@@ -87,19 +91,30 @@ fn main(mut gba: agb::Gba) -> ! {
     frame.commit();
 
     loop {
+        let possible_next_ball_pos = ball_pos + ball_velocity;
 
-        ball_pos += ball_velocity;
+        let ball_rect = Rect::new(possible_next_ball_pos, vec2(8,8));
+        if paddle_l.collision_rect().touches(ball_rect) {
+            ball_velocity.x = 1;
+            ball_velocity.y *= -1;
+        }
+        if paddle_r.collision_rect().touches(ball_rect) {
+            ball_velocity.x = -1;
+            ball_velocity.y *= -1;
+        }
 
-        if ball_pos.x <= 0 || ball_pos.x >= agb::display::WIDTH - 16 {
+        if possible_next_ball_pos.x <= 0 || possible_next_ball_pos.x >= agb::display::WIDTH - 16 {
             ball_velocity.x *= -1;
         }
-        if ball_pos.y <= 0 || ball_pos.y >= agb::display::HEIGHT - 16 {
+        if possible_next_ball_pos.y <= 0 || possible_next_ball_pos.y >= agb::display::HEIGHT - 16 {
             ball_velocity.y *= -1;
         }
 
         if input.is_pressed(Button::A) {
             ball_velocity *= 2;
         }
+
+        ball_pos += ball_velocity;
 
         ball.set_pos(ball_pos);
         let mut frame = gfx.frame();
