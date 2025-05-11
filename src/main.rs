@@ -27,12 +27,15 @@ include_aseprite!(
 struct Paddle {
     x: i32,
     y: i32,
+    hflip: bool,
 }
+
 impl Paddle {
-    fn new(start_x: i32, start_y: i32) -> Self {
+    fn new(start_x: i32, start_y: i32, hflip: bool) -> Self {
         Self {
             x: start_x,
             y: start_y,
+            hflip,
         }
     }
 
@@ -44,15 +47,18 @@ impl Paddle {
     fn show(&self, frame: &mut GraphicsFrame) {
         Object::new(sprites::PADDLE_END.sprite(0))
             .set_pos((self.x, self.y))
+            .set_hflip(self.hflip)
             .show(frame);
 
         Object::new(sprites::PADDLE_MID.sprite(0))
             .set_pos((self.x, self.y + 16))
+            .set_hflip(self.hflip)
             .show(frame);
 
         Object::new(sprites::PADDLE_END.sprite(0))
             .set_pos((self.x, self.y + 32))
             .set_vflip(true)
+            .set_hflip(self.hflip)
             .show(frame)
     }
 }
@@ -80,11 +86,8 @@ fn main(mut gba: agb::Gba) -> ! {
     let mut velocity_x = 0;
     let mut velocity_y = 0;
 
-    let mut paddle_l = Paddle::new(8, 8);
-    let mut paddle_r = Paddle::new(240 - 16 - 8, 8);
-
-    paddle_l.show(&mut frame);
-    paddle_r.show(&mut frame);
+    let mut paddle_l = Paddle::new(8, 8, false);
+    let mut paddle_r = Paddle::new(240 - 16 - 8, 8, true);
 
     frame.commit();
 
