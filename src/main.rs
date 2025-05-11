@@ -14,13 +14,48 @@
 #![cfg_attr(test, reexport_test_harness_main = "test_main")]
 #![cfg_attr(test, test_runner(agb::test_runner::test_runner))]
 
+use agb::display::GraphicsFrame;
 use agb::display::object::Object;
 use agb::include_aseprite;
+use agb::input::Button;
 
 include_aseprite!(
     mod sprites,
     "gfx/sprites.aseprite"
 );
+
+struct Paddle {
+    x: i32,
+    y: i32,
+}
+impl Paddle {
+    fn new(start_x: i32, start_y: i32) -> Self {
+        Self {
+            x: start_x,
+            y: start_y,
+        }
+    }
+
+    fn set_pos(&mut self, x: i32, y: i32) {
+        self.x = x;
+        self.y = y;
+    }
+
+    fn show(&self, frame: &mut GraphicsFrame) {
+        Object::new(sprites::PADDLE_END.sprite(0))
+            .set_pos((self.x, self.y))
+            .show(frame);
+
+        Object::new(sprites::PADDLE_MID.sprite(0))
+            .set_pos((self.x, self.y + 16))
+            .show(frame);
+
+        Object::new(sprites::PADDLE_END.sprite(0))
+            .set_pos((self.x, self.y + 32))
+            .set_vflip(true)
+            .show(frame)
+    }
+}
 
 // The main function must take 1 arguments and never return. The agb::entry decorator
 // ensures that everything is in order. `agb` will call this after setting up the stack
@@ -36,29 +71,43 @@ fn main(mut gba: agb::Gba) -> ! {
 
     let mut frame = gfx.frame();
     ball.show(&mut frame);
-    frame.commit();
+
+    let mut input = agb::input::ButtonController::new();
 
     let mut ball_x = 50;
     let mut ball_y = 50;
 
-    let mut velocity_x = 1;
-    let mut velocity_y = 1;
+    let mut velocity_x = 0;
+    let mut velocity_y = 0;
+
+    let mut paddle_l = Paddle::new(8, 8);
+    let mut paddle_r = Paddle::new(240 - 16 - 8, 8);
+
+    paddle_l.show(&mut frame);
+    paddle_r.show(&mut frame);
+
+    frame.commit();
 
     loop {
         ball_x = (ball_x + velocity_x).clamp(0, agb::display::WIDTH - 16);
         ball_y = (ball_y + velocity_y).clamp(0, agb::display::HEIGHT - 16);
 
-        if ball_x == 0 || ball_x == agb::display::WIDTH - 16 {
-            velocity_x = -velocity_x;
-        }
-        if ball_y == 0 || ball_y == agb::display::HEIGHT - 16 {
-            velocity_y = -velocity_y;
+        velocity_x = input.x_tri() as i32;
+        velocity_y = input.y_tri() as i32;
+
+        if input.is_pressed(Button::A) {
+            velocity_y = velocity_y * 2;
+            velocity_x = velocity_x * 2;
         }
 
         ball.set_pos((ball_x, ball_y));
         let mut frame = gfx.frame();
         ball.show(&mut frame);
-        frame.commit();
-    }
 
+        paddle_l.show(&mut frame);
+        paddle_r.show(&mut frame);
+
+        frame.commit();
+        input.update();
+    }
 }
