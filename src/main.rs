@@ -18,6 +18,7 @@ use agb::display::GraphicsFrame;
 use agb::display::object::Object;
 use agb::include_aseprite;
 use agb::input::Button;
+use agb::fixnum::{Vector2D, vec2};
 
 include_aseprite!(
     mod sprites,
@@ -25,38 +26,35 @@ include_aseprite!(
 );
 
 struct Paddle {
-    x: i32,
-    y: i32,
+    pos: Vector2D<i32>,
     hflip: bool,
 }
 
 impl Paddle {
-    fn new(start_x: i32, start_y: i32, hflip: bool) -> Self {
+    fn new(start_pos: Vector2D<i32>, hflip: bool) -> Self {
         Self {
-            x: start_x,
-            y: start_y,
+            pos: start_pos,
             hflip,
         }
     }
 
-    fn set_pos(&mut self, x: i32, y: i32) {
-        self.x = x;
-        self.y = y;
+    fn set_pos(&mut self, new_pos: Vector2D<i32>) {
+        self.pos = new_pos;
     }
 
     fn show(&self, frame: &mut GraphicsFrame) {
         Object::new(sprites::PADDLE_END.sprite(0))
-            .set_pos((self.x, self.y))
+            .set_pos(self.pos)
             .set_hflip(self.hflip)
             .show(frame);
 
         Object::new(sprites::PADDLE_MID.sprite(0))
-            .set_pos((self.x, self.y + 16))
+            .set_pos(self.pos + vec2(0, 16))
             .set_hflip(self.hflip)
             .show(frame);
 
         Object::new(sprites::PADDLE_END.sprite(0))
-            .set_pos((self.x, self.y + 32))
+            .set_pos(self.pos + vec2(0, 32))
             .set_vflip(true)
             .set_hflip(self.hflip)
             .show(frame)
@@ -80,30 +78,30 @@ fn main(mut gba: agb::Gba) -> ! {
 
     let mut input = agb::input::ButtonController::new();
 
-    let mut ball_x = 50;
-    let mut ball_y = 50;
+    let mut ball_pos = vec2(50, 50);
+    let mut ball_velocity = vec2(2, 1);
 
-    let mut velocity_x = 0;
-    let mut velocity_y = 0;
-
-    let mut paddle_l = Paddle::new(8, 8, false);
-    let mut paddle_r = Paddle::new(240 - 16 - 8, 8, true);
+    let mut paddle_l = Paddle::new(vec2(8, 8), false);
+    let mut paddle_r = Paddle::new(vec2(240 - 16 - 8, 8), true);
 
     frame.commit();
 
     loop {
-        ball_x = (ball_x + velocity_x).clamp(0, agb::display::WIDTH - 16);
-        ball_y = (ball_y + velocity_y).clamp(0, agb::display::HEIGHT - 16);
 
-        velocity_x = input.x_tri() as i32;
-        velocity_y = input.y_tri() as i32;
+        ball_pos += ball_velocity;
 
-        if input.is_pressed(Button::A) {
-            velocity_y = velocity_y * 2;
-            velocity_x = velocity_x * 2;
+        if ball_pos.x <= 0 || ball_pos.x >= agb::display::WIDTH - 16 {
+            ball_velocity.x *= -1;
+        }
+        if ball_pos.y <= 0 || ball_pos.y >= agb::display::HEIGHT - 16 {
+            ball_velocity.y *= -1;
         }
 
-        ball.set_pos((ball_x, ball_y));
+        if input.is_pressed(Button::A) {
+            ball_velocity *= 2;
+        }
+
+        ball.set_pos(ball_pos);
         let mut frame = gfx.frame();
         ball.show(&mut frame);
 
