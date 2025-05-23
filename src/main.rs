@@ -16,6 +16,7 @@
 
 use agb::{
     display::{
+        HEIGHT,
         GraphicsFrame, Priority,
         object::Object,
         tiled::{RegularBackgroundSize, RegularBackgroundTiles, TileFormat, VRAM_MANAGER},
@@ -52,6 +53,12 @@ impl Paddle {
     }
 
     fn move_by(&mut self, y: Fixed) {
+        let new_pos = self.pos + vec2(num!(0), y);
+
+        if new_pos.y <= num!(1) || new_pos.y >= num!(HEIGHT - 43) {
+            return;
+        }
+
         self.pos += vec2(num!(0), y);
     }
 
@@ -153,7 +160,7 @@ fn main(mut gba: agb::Gba) -> ! {
 
     let mut ball = Ball::new();
     let mut paddle_l = Paddle::new(vec2(num!(8), num!(8)), false);
-    let paddle_r = Paddle::new(vec2(num!(240 - 16 - 8), num!(8)), true);
+    let mut paddle_r = Paddle::new(vec2(num!(240 - 16 - 8), num!(8)), true);
 
     loop {
         let mut frame = gfx.frame();
@@ -168,5 +175,12 @@ fn main(mut gba: agb::Gba) -> ! {
         frame.commit();
         input.update();
         paddle_l.move_by(Num::from(input.y_tri() as i32));
+
+        // Move the right paddle closer to the y value of the ball
+        match paddle_r.pos.y.cmp(&ball.pos.y) {
+            core::cmp::Ordering::Less => paddle_r.move_by(num!(0.9)),
+            core::cmp::Ordering::Greater => paddle_r.move_by(num!(-0.9)),
+            _ => continue
+        }
     }
 }
