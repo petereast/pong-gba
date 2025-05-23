@@ -51,6 +51,10 @@ impl Paddle {
         self.pos = new_pos;
     }
 
+    fn move_by(&mut self, y: Fixed) {
+        self.pos += vec2(num!(0), y);
+    }
+
     fn show(&self, frame: &mut GraphicsFrame) {
         let sprite_pos = self.pos.round();
         Object::new(sprites::PADDLE_END.sprite(0))
@@ -148,7 +152,7 @@ fn main(mut gba: agb::Gba) -> ! {
     let mut input = agb::input::ButtonController::new();
 
     let mut ball = Ball::new();
-    let paddle_l = Paddle::new(vec2(num!(8), num!(8)), false);
+    let mut paddle_l = Paddle::new(vec2(num!(8), num!(8)), false);
     let paddle_r = Paddle::new(vec2(num!(240 - 16 - 8), num!(8)), true);
 
     loop {
@@ -163,5 +167,6 @@ fn main(mut gba: agb::Gba) -> ! {
         bg.show(&mut frame);
         frame.commit();
         input.update();
+        paddle_l.move_by(Num::from(input.y_tri() as i32));
     }
 }
