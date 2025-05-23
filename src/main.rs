@@ -16,8 +16,7 @@
 
 use agb::{
     display::{
-        HEIGHT,
-        GraphicsFrame, Priority,
+        GraphicsFrame, HEIGHT, Priority,
         object::Object,
         tiled::{RegularBackgroundSize, RegularBackgroundTiles, TileFormat, VRAM_MANAGER},
     },
@@ -95,7 +94,7 @@ impl Ball {
     fn new() -> Self {
         Self {
             pos: vec2(num!(50), num!(50)),
-            velocity: vec2(num!(2), num!(0.5)),
+            velocity: vec2(num!(1), num!(0.5)),
         }
     }
 
@@ -107,26 +106,30 @@ impl Ball {
             self.velocity.x = self.velocity.x.abs();
 
             let y_difference = (ball_rect.centre().y - paddle_l.collision_rect().centre().y) / 32;
-            self.velocity.y += y_difference
+            self.velocity.y += y_difference;
+            self.velocity.x *= num!(1.1);
         }
 
         if paddle_r.collision_rect().touches(ball_rect) {
             self.velocity.x = -self.velocity.x.abs();
 
             let y_difference = (ball_rect.centre().y - paddle_r.collision_rect().centre().y) / 32;
-            self.velocity.y += y_difference
-
+            self.velocity.y += y_difference;
+            self.velocity.x *= num!(1.1);
         }
 
         let rounded_possible_next_pos = possible_next_ball_pos.round();
 
-        if rounded_possible_next_pos.x <= 0 || rounded_possible_next_pos.x >= agb::display::WIDTH - 16 {
+        if rounded_possible_next_pos.x <= 0
+            || rounded_possible_next_pos.x >= agb::display::WIDTH - 16
+        {
             self.velocity.x *= num!(-1);
         }
-        if rounded_possible_next_pos.y <= 0 || rounded_possible_next_pos.y >= agb::display::HEIGHT - 16 {
+        if rounded_possible_next_pos.y <= 0
+            || rounded_possible_next_pos.y >= agb::display::HEIGHT - 16
+        {
             self.velocity.y *= num!(-1);
         }
-
 
         self.pos += self.velocity;
     }
@@ -180,7 +183,7 @@ fn main(mut gba: agb::Gba) -> ! {
         match paddle_r.pos.y.cmp(&ball.pos.y) {
             core::cmp::Ordering::Less => paddle_r.move_by(num!(0.9)),
             core::cmp::Ordering::Greater => paddle_r.move_by(num!(-0.9)),
-            _ => continue
+            _ => continue,
         }
     }
 }
